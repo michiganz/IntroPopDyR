@@ -1,0 +1,223 @@
+---
+title: "FISH 421: Lab 1: Logistic population growth"
+author: "Milo Adkison"
+date: "April 19, 2016"
+output: html_document
+---
+Step 1. Use the logistic growth equation to calculate abundance by year, start with 1 individual over a period of 100 years 
+Intrinsic population growth rate at low abundance
+
+```{r, eval = F}
+r = 0.2
+```
+
+Carrying capacity
+
+```{r, eval = F}
+K = 1000
+```
+
+
+Create a function to calculate abundance, the inputs are *r*, *K*, *N*, and *t*.
+
+
+```{r}
+logistic_growth <- function(r, K, N, t){  #create a function with the input values
+   z =  NA                                #define a vector for holding the calculated values
+   z[1] = N                               # define the starting value
+   for(i in 1:(t-1)){                     #run iterations to one less than the total time (you've provided the first value)
+      z[i+1] = z[i]+ r * z[i] * (1-z[i]/K)#logistic growth model
+   }
+   df <- data.frame(year = 1:t, N = z, K = factor(K), r = factor(r))   #create a dataframe for holding the values
+}
+```
+
+run the model with selected inputs - name it so you can plot later
+
+```{r}
+dat <- logistic_growth(0.2, 1000, 1, 100) 
+```
+
+Graph the abundance over time
+```{r}
+library(ggplot2)
+ggplot(dat, aes(year, N))+geom_line()
+```
+
+Change the initial abundance (in year 1) to 1500. What does the population do?
+```{r}
+dat1 <- logistic_growth(0.2, 1000, 1500, 100) #give the model run a different name to be able to compare the results
+```
+
+Plot the results of both iterations
+```{r, message = F}
+library(plyr)
+library(dplyr)
+dat %>% 
+   mutate(model = 'one') -> dat
+
+dat1 %>% 
+      mutate(model = 'two') -> dat1
+
+dat2 <- rbind(dat,dat1)
+
+ggplot(dat2, aes(year, N, color=model))+geom_line()
+```
+
+Change logistic growth model to calculate what abundance the population would have if it started from the value in vector *N(t)* the year before. Add a replacement line (red).
+```{r}
+dat3 <- data.frame(N = seq(0,1500,by=15), r = 0.2, K = 1000) #create a data.frame of abundance in increments of 15
+dat3 %>%
+mutate(N1 = N + r * N * (1-N/K)) %>% 
+ggplot(., aes(N, N1))+geom_point()+geom_line(aes(N,N), color='red')
+```
+
+
+Change the parameters. What happens if you change K
+```{r, warning = F}
+k100 <- logistic_growth(0.2, 100, 1, 100)
+k500 <- logistic_growth(0.2, 500, 1, 100)
+k1000 <- logistic_growth(0.2, 1000, 1, 100)
+k1500 <- logistic_growth(0.2, 1500, 1, 100)
+k2000 <- logistic_growth(0.2, 2000, 1, 100)
+k5000 <- logistic_growth(0.2, 5000, 1, 100)
+
+rbind_all(list(k100 ,k500, k1000, k1500, k2000, k5000)) %>% 
+      ggplot(., aes(year, N, color=K))+geom_line()
+```
+
+What do you think will happen if we double ‘r’ from 0.2 to 0.4? 
+Think about this for a few minutes before you try it.  
+
+Return *K* to 1000
+
+```{r}
+r20 <- logistic_growth(0.2, 1000, 1, 100)
+r40 <- logistic_growth(0.4, 1000, 1, 100)
+
+r2040 <- rbind(r20, r40) 
+
+r2040 %>% 
+   ggplot(aes(year, N, color=r))+geom_line()
+```
+
+What changed? What didn’t change? Why? 
+
+Look at the graph of *N(t+1)* vs. *N(t)*. How does it change when *r* is changed 
+from 0.2 to 0.4. What’s the change in the amount of density-dependence?
+```{r}
+dat4 <- data.frame(N = seq(0,1500,by=15), r2 = 0.2, r4 = 0.4, K= 1000) #create a data.frame of abundance in increments of 15
+
+dat4 %>%
+mutate(N2 = N + r2 * N * (1-N/K),
+       N4 = N + r4 * N * (1-N/K)) %>% 
+ggplot(., aes(N, N2))+geom_line()+geom_line(aes(N,N), color='red', lty = 4)+
+   geom_line(aes(N, N4), color='blue')
+```
+
+Try it with *r* = 1
+```{r}
+dat5 <- data.frame(N = seq(0,1500,by=15), r2 = 0.2, r4 = 0.4, r10 = 1, K= 1000) #create a data.frame of abundance in increments of 15
+
+dat5 %>%
+mutate(N2 = N + r2 * N * (1-N/K),
+       N4 = N + r4 * N * (1-N/K),
+       N10 =N + r10 * N * (1-N/K) ) %>% 
+ggplot(., aes(N, N2))+geom_line()+geom_line(aes(N,N), color='red', lty = 4)+
+   geom_line(aes(N, N4), color='blue')+
+   geom_line(aes(N, N10), color='green')
+```
+
+Abundance vs time
+```{r}
+r100 <- logistic_growth(1, 1000, 1, 100)
+
+r20401 <- rbind(r2040, r100) 
+
+r20401 %>% 
+   ggplot(aes(year, N, color=r))+geom_line()
+```
+
+Try *r* = 2.0. What’s that funny little squiggle there starting about year 15? Look at the abundance for years 8-20. Is the population climbing steadily to its carrying capacity? What is it doing?
+
+```{r}
+dat6 <- data.frame(N = seq(0,1500,by=15), r2 = 0.2, r4 = 0.4, r10 = 1,r20 = 2, K= 1000) #create a data.frame of abundance in increments of 15
+
+dat6 %>%
+mutate(N2 = N + r2 * N * (1-N/K),
+       N4 = N + r4 * N * (1-N/K),
+       N10 =N + r10 * N * (1-N/K), 
+       N20 = N + r20 * N * (1-N/K)) %>% 
+ggplot(., aes(N, N2))+geom_line()+geom_line(aes(N,N), color='red', lty = 4)+
+   geom_line(aes(N, N4), color='blue')+
+   geom_line(aes(N, N10), color='green')+
+   geom_line(aes(N, N20), color='orange')
+             
+r200 <- logistic_growth(2, 1000, 1, 100)
+r20402 <- rbind(r20401, r200) 
+r20402 %>% 
+   ggplot(aes(year, N, color=r))+geom_line()
+```
+
+Look at the abundance for years 8-20. Is the population climbing steadily to its carrying capacity? What is it doing?
+
+```{r}
+r20402 %>% 
+   ggplot(aes(year, N, color=r))+geom_line()+xlim(0, 20)
+```
+
+Try r = 2.1. Does the population reach carrying capacity? Will it ever? 
+How about when r = 2.5? Does this look like any natural population you’ve heard about?
+
+```{r}
+dat7 <- data.frame(N = seq(0,1500,by=15), r2 = 0.2, r4 = 0.4, r10 = 1,r20 = 2, r21 = 2.1, r25 = 2.5, K= 1000) 
+
+dat7 %>%
+mutate(N2 = N + r2 * N * (1-N/K),
+       N4 = N + r4 * N * (1-N/K),
+       N10 =N + r10 * N * (1-N/K), 
+       N20 = N + r20 * N * (1-N/K),
+       N21 = N + r21 * N * (1-N/K),
+       N25 = N + r25 * N * (1-N/K)) %>% 
+ggplot(., aes(N, N2))+geom_line()+geom_line(aes(N,N), color='red', lty = 4)+
+   geom_line(aes(N, N4), color='blue')+
+   geom_line(aes(N, N10), color='green')+
+   geom_line(aes(N, N20), color='orange')+
+   geom_line(aes(N, N21), color='yellow')+
+   geom_line(aes(N, N25), color=6)
+             
+r210 <- logistic_growth(2.1, 1000, 1, 100)
+r250 <- logistic_growth(2.5, 1000, 1, 100)
+
+r204025 <- rbind_all(list(r20402, r210, r250)) 
+r204025 %>% 
+   ggplot(aes(year, N, color=r))+geom_line()
+```
+
+Construct a bifurcation graph
+
+First construct a dataframe of the values you want
+```{r}
+newd <- data.frame(r = seq(1.8,3, by=0.05), K = 1000, N = 1, t = 100)
+```
+
+run your function on the dataframe
+```{r}
+stored_array <- sapply(1:nrow(newd), function(i) logistic_growth(newd[i,1], newd[i,2],newd[i,3],newd[i,4]) )
+```
+
+Pull the array apart and create a dataframe
+```{r}
+a <- data.frame(stored_array[,1])
+
+for(i in 2:nrow(newd)){
+a <- rbind(a,data.frame(stored_array[,i]))
+}
+```
+
+Remove all but the last ten years and plot results
+```{r}
+a %>% 
+   filter(year>89) %>% 
+   ggplot(aes(r, N, color = factor(r)))+geom_point()
+```
