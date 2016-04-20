@@ -243,6 +243,7 @@ N<-N[-(1:90),]
 
 ## Create a scatterplot graph with the first row (the r values) as the X axis and the rest 
 ## as 10 different Y values for each X.
+par(mfrow=c(1,1))
 plot(N[1,]~r, type="p", pch=1, ylab="N", main="Bifurcation graph")
 for (t in 2:length(N[,1])){
 points(r,N[t,], type="p", pch=t)}
